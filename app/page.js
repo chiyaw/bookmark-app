@@ -21,36 +21,34 @@ export default function Home() {
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
-    if (!error) {
-      setBookmarks(data);
-    } else {
-      console.error(error);
-    }
+    if (!error) setBookmarks(data);
   };
 
   useEffect(() => {
-    const getUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      setUser(data.user);
+    const initAuth = async () => {
+      const { data } = await supabase.auth.getSession();
+      const sessionUser = data.session?.user ?? null;
 
-      if (data.user) {
-        fetchBookmarks(data.user.id);
+      setUser(sessionUser);
+
+      if (sessionUser) {
+        fetchBookmarks(sessionUser.id);
       }
     };
 
-    getUser();
+    initAuth();
 
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        const currentUser = session?.user ?? null;
-        setUser(currentUser);
+        const sessionUser = session?.user ?? null;
+        setUser(sessionUser);
 
-        if (currentUser) {
-          fetchBookmarks(currentUser.id);
+        if (sessionUser) {
+          fetchBookmarks(sessionUser.id);
         } else {
           setBookmarks([]);
         }
-      },
+      }
     );
 
     return () => {
@@ -71,7 +69,6 @@ export default function Home() {
           table: "bookmarks",
         },
         () => {
-          console.log("Realtime triggered 🚀");
           fetchBookmarks(user.id);
         },
       )
@@ -109,8 +106,6 @@ export default function Home() {
     if (!error) {
       setUrl("");
       setTitle("");
-    } else {
-      console.error(error);
     }
   };
 
